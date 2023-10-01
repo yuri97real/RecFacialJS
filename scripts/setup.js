@@ -3,7 +3,9 @@ class RecFacial {
         this.descriptor = null;
         this.video = document.querySelector(videoSelector);
 
-        this.video.addEventListener("play", this.handlePlay);
+        this.video.addEventListener("play", (e) =>
+            this.handlePlay(e, this?.handleDetect)
+        );
 
         this.start();
     }
@@ -23,7 +25,7 @@ class RecFacial {
         );
     }
 
-    handlePlay(e) {
+    handlePlay(e, handleDetect = () => {}) {
         const video = e.target;
         const options = new faceapi.TinyFaceDetectorOptions();
 
@@ -41,9 +43,8 @@ class RecFacial {
 
             if (!singleResult) return;
 
+            handleDetect();
             this.descriptor = singleResult.descriptor;
-
-            if (!singleResult) return;
 
             const displaySize = {
                 width: video.clientWidth,
@@ -61,6 +62,73 @@ class RecFacial {
             faceapi.draw.drawFaceLandmarks(canvas, resizedResults);
         }, 100);
     }
-}
 
-new RecFacial();
+    saveDescriptor(username) {
+        if (!username) throw new Error("username is required");
+
+        if (typeof username != "string")
+            throw new Error("username must be string type");
+
+        const oldValues = this._parseStringDescriptor(
+            localStorage.queryDescriptors || "{}"
+        );
+
+        if (!oldValues[username]) {
+            oldValues[username] = [];
+        }
+
+        oldValues[username].push(this.descriptor);
+
+        const queryDescriptors = this._stringifyDescriptor(oldValues);
+
+        localStorage.setItem("queryDescriptors", queryDescriptors);
+    }
+
+    _stringifyDescriptor(descriptor) {
+        return JSON.stringify(descriptor, (key, value) => {
+            if (
+                value instanceof Int8Array ||
+                value instanceof Uint8Array ||
+                value instanceof Uint8ClampedArray ||
+                value instanceof Int16Array ||
+                value instanceof Uint16Array ||
+                value instanceof Int32Array ||
+                value instanceof Uint32Array ||
+                value instanceof Float32Array ||
+                value instanceof Float64Array
+            ) {
+                const replacement = {
+                    constructor: value.constructor.name,
+                    data: Array.apply(
+                        [],
+                        value instanceof ArrayBuffer
+                            ? new Uint8Array(value)
+                            : value
+                    ),
+                    flag: "FLAG_TYPED_ARRAY",
+                };
+
+                return replacement;
+            }
+            return value;
+        });
+    }
+
+    _parseStringDescriptor(descriptor) {
+        const context = typeof window === "undefined" ? global : window;
+
+        return JSON.parse(descriptor, function (key, value) {
+            try {
+                if (value.constructor === "ArrayBuffer") {
+                    return new Uint8Array(value.data).buffer;
+                }
+
+                if ("flag" in value && value.flag === "FLAG_TYPED_ARRAY") {
+                    return new context[value.constructor](value.data);
+                }
+            } catch (e) {}
+
+            return value;
+        });
+    }
+}

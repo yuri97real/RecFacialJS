@@ -16,3 +16,21 @@
     position: absolute;
     left: 0;
 }
+
+.invalid {
+    animation: deny 0.2s linear;
+    animation-iteration-count: 3;
+}
+
+@keyframes deny {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-15%);
+    }
+    50% {
+        transform: translateX(-15%);
+    }
+}

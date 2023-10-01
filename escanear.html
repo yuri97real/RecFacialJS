@@ -13,10 +13,27 @@
             <div class="card-content">
                 <h4 class="blue-grey-text text-darken-4">Escanear</h4>
 
+                <div class="input-field">
+                    <input id="username" autofocus required placeholder="Informe seu nome aqui"/>
+                    <span class="helper-text" data-error="Campo obrigatório" data-success="">
+                        Esse é o nome que vai aparecer quando seu rosto for detectado na página detectar
+                    </span>
+                </div>
+
                 <div class="media-container">
                     <video id="video" autoplay muted class="responsive-video"></video>
                     <canvas/>
                 </div>
+            </div>
+
+            <div class="card-action">
+                <button id="btn-save" class="btn" disabled>
+                    Salvar Dados
+                </button>
+
+                <a href="/" class="btn orange">
+                    Voltar
+                </a>
             </div>
         </div>
     </div>
@@ -25,6 +42,39 @@
     <script src="/scripts/face-api.min.js"></script>
     <script src="/scripts/setup.js"></script>
 
-    <script>M.AutoInit()</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const recFacial = new RecFacial();
+
+            const btnSave = document.querySelector("button#btn-save");
+            const inputUsername = document.querySelector("input#username");
+
+            recFacial.handleDetect = () => {
+                btnSave.removeAttribute("disabled");
+            };
+
+            btnSave.addEventListener("click", () => {
+                inputUsername.classList.remove("invalid");
+                
+                const username = String(inputUsername.value).trim();
+                
+                if(!username) {
+                    inputUsername.focus();
+                    inputUsername.classList.add("invalid");
+                }
+                
+                recFacial.saveDescriptor(username);
+                
+                M.Toast.dismissAll();
+
+                M.toast({
+                    html: "Salvo com sucesso",
+                    classes: "rounded green",
+                });
+            });
+
+            M.AutoInit();
+        });
+    </script>
 </body>
 </html>
