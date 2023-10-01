@@ -1,0 +1,18 @@
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.media-container {
+    position: relative;
+}
+.media-container video {
+    width: 100%;
+}
+.media-container canvas {
+    position: absolute;
+    left: 0;
+}
