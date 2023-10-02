@@ -91,8 +91,29 @@ class RecFacial {
         this.setFaceMatcher();
     }
 
+    removeUser(username) {
+        if (!username) throw new Error("username is required");
+
+        if (typeof username != "string")
+            throw new Error("username must be string type");
+
+        const currentValues = this._parseStringDescriptor(
+            localStorage.queryDescriptors || "{}"
+        );
+
+        delete currentValues[username];
+
+        const queryDescriptors = this._stringifyDescriptor(currentValues);
+
+        localStorage.setItem("queryDescriptors", queryDescriptors);
+
+        this.setFaceMatcher();
+    }
+
     setFaceMatcher() {
         const { queryDescriptors: stringQueryDescriptors } = localStorage;
+
+        this.faceMatcher = null;
 
         if (!stringQueryDescriptors) return;
 
@@ -108,7 +129,11 @@ class RecFacial {
             return new faceapi.LabeledFaceDescriptors(label, descriptor);
         });
 
+        if (labeledDescriptors.length == 0) return;
+
         this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
+
+        return { labels, descriptors };
     }
 
     _detectUser(canvas, singleResult) {
