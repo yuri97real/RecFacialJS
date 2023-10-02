@@ -1,12 +1,15 @@
 class RecFacial {
     constructor(videoSelector = "#video") {
         this.descriptor = null;
+        this.faceMatcher = null;
+
         this.video = document.querySelector(videoSelector);
 
         this.video.addEventListener("play", (e) =>
             this.handlePlay(e, this?.handleDetect)
         );
 
+        this.setFaceMatcher();
         this.start();
     }
 
@@ -60,6 +63,8 @@ class RecFacial {
 
             faceapi.draw.drawDetections(canvas, resizedResults);
             faceapi.draw.drawFaceLandmarks(canvas, resizedResults);
+
+            this._detectUser(canvas, singleResult);
         }, 100);
     }
 
@@ -82,6 +87,47 @@ class RecFacial {
         const queryDescriptors = this._stringifyDescriptor(oldValues);
 
         localStorage.setItem("queryDescriptors", queryDescriptors);
+
+        this.setFaceMatcher();
+    }
+
+    setFaceMatcher() {
+        const { queryDescriptors: stringQueryDescriptors } = localStorage;
+
+        if (!stringQueryDescriptors) return;
+
+        const queryDescriptors = this._parseStringDescriptor(
+            stringQueryDescriptors
+        );
+
+        const labels = Object.keys(queryDescriptors);
+        const descriptors = Object.values(queryDescriptors);
+
+        const labeledDescriptors = descriptors.map((descriptor, index) => {
+            const label = labels[index];
+            return new faceapi.LabeledFaceDescriptors(label, descriptor);
+        });
+
+        this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
+    }
+
+    _detectUser(canvas, singleResult) {
+        if (!this.faceMatcher) return;
+
+        const bestMatch = this.faceMatcher.findBestMatch(
+            singleResult.descriptor
+        );
+
+        const drawBox = new faceapi.draw.DrawTextField(
+            bestMatch?.label,
+            { x: 200, y: 200 },
+            {
+                anchorPosition: "TOP_LEFT",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+            }
+        );
+
+        drawBox.draw(canvas);
     }
 
     _stringifyDescriptor(descriptor) {
