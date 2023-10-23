@@ -21,11 +21,17 @@ class RecFacial {
         await faceapi.nets.faceRecognitionNet.loadFromUri(routeModels);
         await faceapi.nets.faceExpressionNet.loadFromUri(routeModels);
 
-        navigator.getUserMedia(
-            { video: true, audio: false },
-            (stream) => (this.video.srcObject = stream),
-            (err) => console.log(err)
-        );
+        navigator.mediaDevices
+            .getUserMedia({
+                video: true,
+                audio: false,
+            })
+            .then(mediaStream => {
+                this.video.srcObject = mediaStream;
+            })
+            .catch(err => {
+                console.error(`${err.name}: ${err.message}`);
+            });
     }
 
     handlePlay(e, handleDetect = () => {}) {
